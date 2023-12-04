@@ -10,7 +10,6 @@ import java.util.List;
 public class Question {
 
     private static final String DELETE_PERMISSION_ERROR_MESSAGE = "질문을 삭제할 권한이 없습니다.";
-    private static final String DELETE_ERROR_MESSAGE = "다른 사람이 쓴 답변이 있어 삭제할 수 없습니다.";
 
     private Long id;
 
@@ -90,27 +89,30 @@ public class Question {
         return answers;
     }
 
-    public List<DeleteHistory> deleteQuestion(NsUser loginUser) throws CannotDeleteException {
-        checkOwner(isOwner(loginUser), DELETE_PERMISSION_ERROR_MESSAGE);
+    public void delete(NsUser loginUser) throws CannotDeleteException {
+        checkOwner(loginUser);
 
-        List<Answer> answers = getAnswers();
-        for (Answer answer : answers) {
-            checkOwner(answer.isOwner(loginUser), DELETE_ERROR_MESSAGE);
-        }
 
-        List<DeleteHistory> deleteHistories = new ArrayList<>();
-        setDeleted(true);
-        deleteHistories.add(new DeleteHistory(ContentType.QUESTION, id, writer));
-        for (Answer answer : answers) {
-            answer.setDeleted(true);
-            deleteHistories.add(new DeleteHistory(ContentType.ANSWER, answer.getId(), answer.getWriter()));
-        }
-        return deleteHistories;
+        this.deleted = true;
+        deleteHistories.add();
+
+
+
     }
 
-    private void checkOwner(boolean deleteEnabled, String message) throws CannotDeleteException {
-        if (!deleteEnabled) {
-            throw new CannotDeleteException(message);
+    public List<DeleteHistory> deleteHistories() {
+        List<DeleteHistory> deleteHistories = new ArrayList<>();
+        deleteHistories.add(new DeleteHistory(ContentType.QUESTION, id, writer, LocalDateTime.now()));
+        for (Answer answer : answers) {
+            DeleteHistory deleteHistory = answer.delete(loginUser);
+            deleteHistories.add(deleteHistory);
+        }
+        return this.deleteHistories;
+    }
+
+    private void checkOwner(NsUser loginUser) throws CannotDeleteException {
+        if (!isOwner(loginUser)) {
+            throw new CannotDeleteException(DELETE_PERMISSION_ERROR_MESSAGE);
         }
     }
 
