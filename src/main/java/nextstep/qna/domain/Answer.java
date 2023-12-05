@@ -76,9 +76,12 @@ public class Answer {
         this.question = question;
     }
 
-    public DeleteHistory delete(NsUser loginUser) throws CannotDeleteException {
+    public void delete(NsUser loginUser) throws CannotDeleteException {
         checkOwner(loginUser);
         this.deleted = true;
+    }
+
+    public DeleteHistory deleteHistory() {
         return new DeleteHistory(ContentType.ANSWER, id, writer, LocalDateTime.now());
     }
 
